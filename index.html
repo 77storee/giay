@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>77Store - Gallery</title>
+    <style>
+      :root{
+        --accent:#2b82c9;
+        --tab-bg:#eaf6ff;
+        --tab-border:#d6ecff;
+        --tab-text:#1e6fb0;
+        --btn-padding:6px 8px;
+        --gap:8px;
+        --card-radius:8px;
+        --progress-max-height:260px;
+        --card-min:120px;
+        --header-padding:10px;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{font-family:system-ui,Arial;margin:0;background:#f0f6fb;color:#072033; -webkit-font-smoothing:antialiased;}
+      body.dark{ background:#111316; color:#d9dee3 }
+
+      /* header */
+      header{
+        padding: var(--header-padding) 12px calc(var(--header-padding) + env(safe-area-inset-bottom));
+        background: var(--tab-bg);
+        position: sticky; top: 0; z-index: 60;
+        box-shadow: 0 2px 6px rgba(10,10,10,0.06);
+        /* cho panel được hiển thị ra ngoài header */
+        overflow: visible;
+        transition: transform 0.22s ease;
+        transform: translateY(0);
+      }
+
+      header.header-hidden{ transform: translateY(-120%); }
+      body.dark header{ background:#122028 }
+
+      .top-row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+      .top-row > * { min-width:0 }
+      /*.brand{font-weight:700;color:var(--accent);font-size:15px}*/
+      .brand{ display:none; }
+      .search-wrap{ flex:1 1 auto; margin-left:8px; min-width:0; }
+      .search-input{ width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); font-size:14px; min-width:0; }
+
+      header > .controls { display:flex; gap:8px; align-items:center; min-width:0 }
+
+      .tabs{ display:flex; gap:8px; overflow-x:auto; padding:8px 12px; margin-top:8px; -webkit-overflow-scrolling: touch; box-sizing:border-box; }
+      .tab{ padding:8px 10px; border-radius:8px; background:var(--tab-bg); border:1px solid var(--tab-border); cursor:pointer; white-space:nowrap; font-size:13px; color:var(--tab-text); }
+      .tab.active{ background:var(--accent); color:white; box-shadow:0 2px 8px rgba(0,0,0,0.12) }
+
+      main{ padding:10px }
+      .status{ padding:8px 12px; color:#345; font-size:13px }
+
+      /* grid */
+      .grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr)); gap: var(--gap); }
+      .card{ background:white; border-radius:var(--card-radius); padding:8px; box-shadow:0 1px 4px rgba(12,15,30,0.06); display:flex; flex-direction:column; gap:6px; font-size:13px; position:relative; align-items:stretch; min-height:170px; overflow:hidden }
+      body.dark .card{ background:#15181a }
+      .thumb-wrap{ width:100%; aspect-ratio:1/1; overflow:hidden; border-radius:8px; background:#f6f8fa }
+      body.dark .thumb-wrap{ background:#222528 }
+      .card img{ width:100%; height:100%; object-fit:cover; display:block }
+
+      /* checkbox */
+      .checkbox-select{ position:absolute; left:8px; top:8px; z-index:20; width:28px; height:28px; transform:scale(1.2); display:none }
+      body.body-multiselect .checkbox-select{ display:block }
+
+      /* buttons */
+      .btn{ padding:var(--btn-padding); border-radius:8px; border:1px solid rgba(0,0,0,0.06); cursor:pointer; background:transparent; font-size:13px; color:var(--tab-text) }
+      .btn.primary{ background:var(--accent); color:#fff; border-color:var(--accent) }
+      .btn.tab-like{ background:var(--tab-bg); border:1px solid var(--tab-border); color:var(--tab-text) }
+      body.dark .btn.tab-like{ background:#14232a; border-color:#1b2b32; color:#9fcffb }
+      .controls-left .btn{ margin-right:12px }
+
+      /* actions / sections */
+      .actions-bar{ display:flex; gap:8px; align-items:center; margin-bottom:8px }
+      .section-title{ margin:10px 0 6px; font-weight:600; font-size:14px }
+      .muted{ color:#666; font-size:13px }
+
+      /* modal & detail grid */
+      .modal{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; z-index:120; align-items:center; justify-content:center }
+      .modal.open{ display:flex }
+      .modal-content{ background:white; width:92%; height:86%; border-radius:12px; display:flex; flex-direction:column; overflow:auto }
+      body.dark .modal-content{ background:#0f1315; color:#e6e9eb }
+      .modal-header{ padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between }
+      .modal-body{ padding:10px; overflow:auto }
+      .detail-grid{ display:grid; grid-template-columns: repeat(4,1fr); gap:8px }
+      @media(max-width:900px){ .detail-grid{ grid-template-columns: repeat(3,1fr); } }
+      @media(max-width:480px){ .detail-grid{ grid-template-columns: repeat(2,1fr); } }
+
+      /* progress */
+      .progress-panel { position: fixed; right: 12px; bottom: 12px; padding: 10px; width: 360px; max-width: calc(100% - 24px); background: rgba(255,255,255,0.98); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); z-index: 140; display: none; font-size:13px; }
+      .progress-panel.open { display:block; }
+      .groups-scroll { max-height: var(--progress-max-height); overflow:auto; padding-right:6px; margin-bottom:8px; }
+      .progress-row { margin-bottom:8px; border-bottom:1px solid #eee; padding-bottom:6px; }
+      .progress-bar-bg { width:100%; height:8px; background:#eee; border-radius:6px; overflow:hidden; }
+      .progress-bar-fill { height:100%; width:0%; background:var(--accent); border-radius:6px; transition: width 0.12s linear; }
+
+      /* table add */
+      .table-wrap{ overflow:auto }
+      .table-add { width:100%; min-width:900px; border-collapse:collapse; margin:6px 0; }
+      .table-add th, .table-add td { border:1px solid #e6eef6; padding:6px; text-align:left; vertical-align:middle; font-size:13px; }
+      .table-add th { background:#f7fbff; font-weight:600; }
+      .table-add th:nth-child(1), .table-add td:nth-child(1) { width:90px; }
+      .table-add th:nth-child(2), .table-add td:nth-child(2) { width:160px; }
+      .table-add th:nth-child(3), .table-add td:nth-child(3) { width:120px; }
+      .table-add th:nth-child(4), .table-add td:nth-child(4) { width:120px; } /* price col */
+      .table-add th:nth-child(5), .table-add td:nth-child(5) { width:auto; }
+      .table-add th:nth-child(6), .table-add td:nth-child(6) { width:120px; }
+
+      .small-thumb { width:60px; height:60px; object-fit:cover; border-radius:6px; background:#fafafa; display:block; }
+      .row-actions { display:flex; gap:6px; align-items:center; }
+
+      /* float delete */
+      .float-delete{ position:fixed; left:12px; bottom:12px; z-index:150; display:none; }
+      .float-delete button{ background:#ff3b30; color:#fff; border:none; padding:12px 16px; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.15); cursor:pointer; font-weight:700; }
+
+      /* sort control small */
+      .sort-inline { display:inline-flex; gap:6px; align-items:center; margin-left:8px; }
+      .select-small { padding:6px; border-radius:8px; border:1px solid #d6ecff; background:var(--tab-bg); color:var(--tab-text); }
+
+      /* responsive */
+      @media (min-width: 600px) and (max-width: 999px) { .grid{ grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; } }
+      @media (min-width: 1000px) { .grid{ grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:12px; } }
+      @media (max-width: 480px){ .progress-panel{ width: 92%; right: 4%; } .grid{ grid-template-columns: repeat(3, 1fr); } }
+
+      img{ max-width:100%; display:block }
+
+      /* --- new more-panel styles --- */
+      #more-control { display:inline-block; position:relative; }
+      #more-btn { padding:6px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.08); background:#fff; cursor:pointer; }
+      #more-panel { position:absolute; right:0; top:42px; width:200px; background:#fff; border:1px solid rgba(0,0,0,0.08); box-shadow:0 6px 18px rgba(0,0,0,0.08); padding:8px; display:none; flex-direction:column; gap:6px; border-radius:8px; z-index:200; }
+      #more-panel button { width:100%; padding:8px 10px; text-align:left; border-radius:6px; border:none; background:#f6f6f6; cursor:pointer; }
+      #more-panel button:hover{ background:#eee; }
+      #more-control.open #more-panel { display:flex; }
+    </style>
+
+  </head>
+  <body>
+    <header id="pageHeader">
+      <div class="top-row">
+        <div class="search-wrap">
+          <input
+            id="searchInput"
+            class="search-input"
+            placeholder="Tìm theo barcode (VD: 146888) — Enter để tìm"
+          />
+        </div>
+        <div class="controls" style="flex:0 0 auto">
+          <div
+            id="more-control"
+            style="position:relative; display:inline-block;"
+          >
+            <button id="more-btn" class="btn tab-like" title="More">⋯</button>
+            <div id="more-panel" aria-hidden="true">
+              
+              <button id="themeToggle" class="btn tab-like">Light/Dark</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="tabs" class="tabs"></div>
+    </header>
+
+    <main id="mainContent">
+      <div id="status" class="status">Đang tải manifest...</div>
+      <div id="content"></div>
+    </main>
+
+    <!-- modal -->
+    <div id="modal" class="modal" role="dialog" aria-hidden="true">
+      <div class="modal-content">
+        <div class="modal-header">
+          <!-- LEFT: title + price + inline edit row (hidden) -->
+          <div
+            id="modalHeaderLeft"
+            style="display:flex; flex-direction:column; gap:6px;"
+          >
+            <div style="font-weight:700"><span id="modalTitle"></span></div>
+
+          </div>
+
+          <!-- RIGHT: Thay giá button + đóng -->
+          <div
+            id="modalHeaderRight"
+            style="display:flex; gap:8px; align-items:center;"
+          >
+            
+            <button id="modalClose" class="btn">Đóng</button>
+          </div>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+      </div>
+    </div>
+
+    <script>
+	/* CONFIG */
+const WORKER_BASE = 'https://test.lapproak0.workers.dev';
+const PREFIX = 'Shoes';
+
+/* DOM */
+const statusEl = document.getElementById('status');
+const tabsEl = document.getElementById('tabs');
+const contentEl = document.getElementById('content');
+const searchInput = document.getElementById('searchInput');
+const themeToggle = document.getElementById('themeToggle');
+
+const modal = document.getElementById('modal');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+
+let manifestRaw = null;
+let manifest = null;
+let manifestMap = {};
+let activeTab = 'all';
+let priceSortMode = 'asc'; // 'asc' | 'desc' | null
+
+/* theme */
+function applyTheme(isDark) {
+  document.body.classList.toggle('dark', !!isDark);
+  sessionStorage.setItem('dark_mode_v1', !!isDark);
+}
+themeToggle.onclick = () => {
+  const isDark = !document.body.classList.contains('dark');
+  applyTheme(isDark);
+};
+(function () {
+  const ds = sessionStorage.getItem('dark_mode_v1');
+  if (ds === 'true') applyTheme(true);
+})();
+
+/* helpers */
+function logStatus(msg) {
+  statusEl.textContent = msg;
+  console.log(msg);
+}
+function showModal(title, htmlOrNode) {
+  modalTitle.textContent = title;
+  if (typeof htmlOrNode === 'string') modalBody.innerHTML = htmlOrNode;
+  else {
+    modalBody.innerHTML = '';
+    modalBody.appendChild(htmlOrNode);
+  }
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+modal.onclick = e => {
+  if (e.target === modal) document.getElementById('modalClose').click();
+};
+/* manifest normalization: IGNORE keys that are not sizes */
+function normalizeManifest(raw) {
+  if (!raw) return { sizes: [] };
+  if (Array.isArray(raw)) return { sizes: raw };
+  if (raw.sizes && Array.isArray(raw.sizes)) {
+    return {
+      sizes: raw.sizes.map(s => ({
+        size: String(s.size || s.name || '').trim(),
+        barcodes: Array.isArray(s.barcodes)
+          ? s.barcodes.map(b => ({
+              code: String(b.code || '').trim(),
+              images: Array.isArray(b.images) ? b.images.slice() : [],
+              price: b.price,
+            }))
+          : [],
+      })),
+    };
+  }
+  const sizes = [];
+  const IGNORE_KEYS = new Set(['meta', 'version', 'manifest', 'trash']);
+  for (const [k, v] of Object.entries(raw)) {
+    if (IGNORE_KEYS.has(String(k).toLowerCase())) continue;
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const barcodes = [];
+      for (const [code, imgs] of Object.entries(v)) {
+        if (Array.isArray(imgs))
+          barcodes.push({ code: String(code).trim(), images: imgs.slice() });
+        else if (imgs && typeof imgs === 'object' && Array.isArray(imgs.images))
+          barcodes.push({
+            code: String(code).trim(),
+            images: imgs.images.slice(),
+            price: imgs.price,
+          });
+      }
+      if (barcodes.length) sizes.push({ size: String(k).trim(), barcodes });
+    }
+  }
+  sizes.sort((a, b) => {
+    const ai = parseInt(a.size),
+      bi = parseInt(b.size);
+    if (!isNaN(ai) && !isNaN(bi)) return ai - bi;
+    return a.size.localeCompare(b.size);
+  });
+  return { sizes };
+}
+
+/* manifest map */
+function buildManifestMap() {
+  manifestMap = {};
+  if (!manifest || !Array.isArray(manifest.sizes)) return;
+  for (const s of manifest.sizes) {
+    const sizeKey = String(s.size).trim();
+    manifestMap[sizeKey] = manifestMap[sizeKey] || {};
+    for (const b of s.barcodes) {
+      manifestMap[sizeKey][String(b.code).trim()] = true;
+    }
+  }
+}
+
+/* fetch manifest */
+async function fetchManifest({ forceRefresh = false } = {}) {
+  try {
+    logStatus('Loading manifest...');
+    if (forceRefresh) {
+      const key = await promptAndValidateAdminKey();
+      if (!key) return;
+      const r = await fetch(WORKER_BASE + '/refresh-manifest', {
+        method: 'POST',
+        headers: { 'x-api-key': key },
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => r.statusText);
+        throw new Error('Refresh failed: ' + t);
+      }
+      manifestRaw = await r.json();
+    } else {
+      const r = await fetch(WORKER_BASE + '/manifest.json', {
+        cache: 'no-store',
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => r.statusText);
+        throw new Error('manifest fetch ' + r.status);
+      }
+      manifestRaw = await r.json();
+    }
+    manifest = normalizeManifest(manifestRaw || {});
+    buildManifestMap();
+    logStatus('Manifest loaded');
+    buildTabs();
+  } catch (err) {
+    console.error(err);
+    logStatus('Không load được manifest: ' + err.message);
+    contentEl.innerHTML = '';
+  }
+}
+
+// toggle more panel
+(function () {
+  const moreControl = document.getElementById('more-control');
+  const moreBtn = document.getElementById('more-btn');
+  if (!moreControl || !moreBtn) return;
+  moreBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    moreControl.classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!moreControl.contains(e.target)) moreControl.classList.remove('open');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') moreControl.classList.remove('open');
+  });
+})();
+
+/* tabs */
+function createTabButton(text, key) {
+  const btn = document.createElement('button');
+  btn.className = 'tab' + (activeTab === key ? ' active' : '');
+  btn.textContent = text;
+  btn.dataset.key = key;
+  btn.onclick = () => {
+    activeTab = key;
+    document
+      .querySelectorAll('.tab')
+      .forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    setActiveButton();
+    renderAccording();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  return btn;
+}
+function setActiveButton() {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const btn = document.querySelector(`.tab[data-key="${activeTab}"]`);
+  if (btn) btn.classList.add('active');
+}
+function buildTabs() {
+  tabsEl.innerHTML = '';
+  tabsEl.appendChild(createTabButton('Tất cả', 'all'));
+  for (const s of manifest.sizes) {
+    const cleanLabel = String(s.size)
+      .replace(/^Size\s*/i, '')
+      .trim(); // bỏ tiền tố "Size "
+    tabsEl.appendChild(createTabButton(cleanLabel, 'size:' + s.size));
+  }
+  const spacer = document.createElement('div');
+  spacer.style.flex = '1';
+  tabsEl.appendChild(spacer);
+  setActiveButton();
+  renderAccording();
+}
+
+/* card */
+function makeCard(size, bc) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const thumbName =
+    (Array.isArray(bc.images) && bc.images.find(x => /thumb/i.test(x))) ||
+    (Array.isArray(bc.images) ? bc.images[0] : null) ||
+    'thumb.jpeg';
+  const encSize = encodeURIComponent(String(size).trim());
+  const encCode = encodeURIComponent(String(bc.code).trim());
+  const src = `${WORKER_BASE}/${PREFIX}/${encSize}/${encCode}/${encodeURIComponent(
+    thumbName
+  )}`;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'thumb-wrap';
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = bc.code;
+  img.onerror = () => {
+    img.style.opacity = 0.6;
+    img.style.objectFit = 'contain';
+  };
+  img.onclick = () => openDetails(size, bc);
+  wrap.appendChild(img);
+  card.appendChild(wrap);
+
+  const row = document.createElement('div');
+  row.style.display = 'flex';
+  row.style.justifyContent = 'center';
+  row.style.gap = '8px';
+
+  card.appendChild(row);
+  return card;
+}
+
+/* open details */
+// helper format/unformat nếu chưa có (giữ lại nếu đã tồn tại)
+function formatMoney(val) {
+  if (val === null || val === undefined || val === '') return '—';
+  const s = String(val).replace(/[^\d]/g, '');
+  if (!s) return '—';
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'k';
+}
+function unformatMoney(s) {
+  return String(s || '')
+    .replace(/[^\d]/g, '')
+    .trim();
+}
+
+// mở modal chi tiết, với editPrice nằm ngay dưới Price:...
+async function openDetails(size, bc) {
+  // header elements
+  const titleEl = document.getElementById('modalTitle');
+
+  // set title + price
+  titleEl.textContent = `${size} — ${bc.code}`;
+
+  // render images in modal body
+  modalBody.innerHTML = '';
+  const imgs = bc.images || [];
+  const div = document.createElement('div');
+  div.className = 'detail-grid';
+  for (const fn of imgs) {
+    const imWrap = document.createElement('div');
+    const im = document.createElement('img');
+    im.src = `${WORKER_BASE}/${PREFIX}/${encodeURIComponent(
+      String(size).trim()
+    )}/${encodeURIComponent(String(bc.code).trim())}/${encodeURIComponent(fn)}`;
+    im.style.width = '100%';
+    im.style.height = '100%';
+    im.style.objectFit = 'cover';
+    imWrap.appendChild(im);
+    div.appendChild(imWrap);
+  }
+  modalBody.appendChild(div);
+
+  // show modal
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+
+  // ensure close works (existing button has id modalClose)
+  document.getElementById('modalClose').onclick = () => {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  };
+}
+/* actions bar */
+function renderActionsBar() {
+  const bar = document.createElement('div');
+  bar.className = 'actions-bar';
+  bar.style.justifyContent = 'space-between';
+  bar.style.marginBottom = '10px';
+  const left = document.createElement('div');
+
+  if (activeTab !== 'add') {
+    // sort by price inline control (unchanged)
+    const sortWrap = document.createElement('div');
+    sortWrap.className = 'sort-inline';
+    const sortSel = document.createElement('select');
+    sortSel.className = 'select-small';
+    const optAsc = document.createElement('option');
+    optAsc.value = 'asc';
+    optAsc.textContent = 'Giá tăng dần';
+    const optDesc = document.createElement('option');
+    optDesc.value = 'desc';
+    optDesc.textContent = 'Giá giảm dần';
+    sortSel.appendChild(optAsc);
+    sortSel.appendChild(optDesc);
+    sortSel.value = priceSortMode || 'asc';
+    sortSel.onchange = () => {
+      priceSortMode = sortSel.value;
+      renderAccording();
+    };
+    sortWrap.appendChild(sortSel);
+    left.appendChild(sortWrap);
+
+    // override toggle behavior (uses closure so chooseExcelBtn can be updated)
+  } else {
+    const spacer = document.createElement('div');
+    spacer.style.height = '1px';
+    spacer.style.display = 'inline-block';
+    left.appendChild(spacer);
+  }
+
+  bar.appendChild(left);
+  const right = document.createElement('div');
+  right.style.display = 'flex';
+  right.style.gap = '8px';
+  right.style.alignItems = 'center';
+  bar.appendChild(right);
+  return bar;
+}
+
+/* render functions (all/size/add) */
+function renderAll() {
+  contentEl.innerHTML = '';
+  contentEl.appendChild(renderActionsBar());
+
+  // mỗi size vẫn là một section; trong mỗi section, sort theo price nếu priceSortMode
+  for (const s of manifest.sizes) {
+    const h = document.createElement('div');
+    h.className = 'section-title';
+    h.textContent = String(s.size);
+    contentEl.appendChild(h);
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    // copy danh sách barcodes để không ảnh hưởng gốc
+    let barcodes = Array.isArray(s.barcodes) ? s.barcodes.slice() : [];
+    if (priceSortMode) {
+      barcodes.sort((a, b) => {
+        const pa =
+          a && (a.price || a.price === 0)
+            ? Number(String(a.price).replace(/[^\d]/g, ''))
+            : Infinity;
+        const pb =
+          b && (b.price || b.price === 0)
+            ? Number(String(b.price).replace(/[^\d]/g, ''))
+            : Infinity;
+        return priceSortMode === 'asc' ? pa - pb : pb - pa;
+      });
+    }
+
+    for (const bc of barcodes) grid.appendChild(makeCard(s.size, bc, false));
+    contentEl.appendChild(grid);
+  }
+}
+
+function renderSize(sizeStr) {
+  contentEl.innerHTML = '';
+  contentEl.appendChild(renderActionsBar());
+  const s = manifest.sizes.find(x => String(x.size) === String(sizeStr));
+  if (!s) {
+    contentEl.innerHTML = '<div class="muted">Không có size này</div>';
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  let barcodes = Array.isArray(s.barcodes) ? s.barcodes.slice() : [];
+  if (priceSortMode) {
+    barcodes.sort((a, b) => {
+      const pa =
+        a && (a.price || a.price === 0)
+          ? Number(String(a.price).replace(/[^\d]/g, ''))
+          : Infinity;
+      const pb =
+        b && (b.price || b.price === 0)
+          ? Number(String(b.price).replace(/[^\d]/g, ''))
+          : Infinity;
+      return priceSortMode === 'asc' ? pa - pb : pb - pa;
+    });
+  }
+  for (const bc of barcodes) grid.appendChild(makeCard(s.size, bc, false));
+  contentEl.appendChild(grid);
+}
+
+/* render helpers & search */
+function renderAccording() {
+  if (activeTab === 'all') renderAll();
+  else if (activeTab.startsWith('size:')) renderSize(activeTab.split(':')[1]);
+}
+
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const q = searchInput.value || '';
+    doSearch(q);
+  }
+});
+function doSearch(query) {
+  const q = String(query || '').trim();
+  if (!q) {
+    renderAccording();
+    return;
+  }
+  const qLower = q.toLowerCase();
+  const results = [];
+  for (const s of manifest.sizes || []) {
+    const matched = (s.barcodes || []).filter(b => {
+      const code = String(b.code || '').toLowerCase();
+      return code.includes(qLower);
+    });
+    if (matched.length) results.push({ size: s.size, barcodes: matched });
+  }
+  contentEl.innerHTML = '';
+  contentEl.appendChild(renderActionsBar());
+  if (!results.length) {
+    const no = document.createElement('div');
+    no.className = 'muted';
+    no.textContent = `Không tìm thấy mã nào chứa "${q}".`;
+    contentEl.appendChild(no);
+    return;
+  }
+  for (const group of results) {
+    const h = document.createElement('div');
+    h.className = 'section-title';
+    h.textContent = String(group.size);
+    contentEl.appendChild(h);
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    let barcodes = group.barcodes.slice();
+    if (priceSortMode) {
+      barcodes.sort((a, b) => {
+        const pa =
+          a && (a.price || a.price === 0)
+            ? Number(String(a.price).replace(/[^\d]/g, ''))
+            : Infinity;
+        const pb =
+          b && (b.price || b.price === 0)
+            ? Number(String(b.price).replace(/[^\d]/g, ''))
+            : Infinity;
+        return priceSortMode === 'asc' ? pa - pb : pb - pa;
+      });
+    }
+    for (const bc of barcodes) {
+      grid.appendChild(makeCard(group.size, bc, false));
+    }
+    contentEl.appendChild(grid);
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+/* header hide/show: header shown only when at very top */
+const headerEl = document.getElementById('pageHeader');
+function handleScroll() {
+  const y =
+    window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+  if (y === 0) headerEl.classList.remove('header-hidden');
+  else headerEl.classList.add('header-hidden');
+}
+window.addEventListener('scroll', handleScroll, { passive: true });
+/* init */
+async function init() {
+  priceSortMode = 'asc';
+  await fetchManifest();
+  floatDelete.style.display = 'none';
+  handleScroll();
+  renderAccording();
+}
+init();
+</script>
+  </body>
+</html>
