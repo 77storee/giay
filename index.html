@@ -667,7 +667,6 @@ window.addEventListener('scroll', handleScroll, { passive: true });
 async function init() {
   priceSortMode = 'asc';
   await fetchManifest();
-  floatDelete.style.display = 'none';
   handleScroll();
   renderAccording();
 }
