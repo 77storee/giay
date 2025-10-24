@@ -23,19 +23,8 @@
       body.dark{ background:#111316; color:#d9dee3 }
 
       /* header */
-      header{
-        padding: var(--header-padding) 12px calc(var(--header-padding) + env(safe-area-inset-bottom));
-        background: var(--tab-bg);
-        position: sticky; top: 0; z-index: 60;
-        box-shadow: 0 2px 6px rgba(10,10,10,0.06);
-        /* cho panel được hiển thị ra ngoài header */
-        overflow: visible;
-        transition: transform 0.22s ease;
-        transform: translateY(0);
-      }
-
-      header.header-hidden{ transform: translateY(-120%); }
-      body.dark header{ background:#122028 }
+	  header{margin-top:4px; padding: 9px; padding-bottom: 5px; background: var(--tab-bg); position: fixed; top: 0; right:0; left:0; z-index: 60; box-shadow: 0 2px 6px rgba(10,10,10,0.06); overflow: visible; transition: transform 0.22s ease; transform: translateY(0);}
+	  body.dark header{ background:#122028 }
 
       .top-row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
       .top-row > * { min-width:0 }
@@ -625,24 +614,13 @@ function doSearch(query) {
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-/* header hide/show: header shown only when at very top */
-const headerEl = document.getElementById('pageHeader');
-function handleScroll() {
-  const y =
-    window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
-  if (y === 0) headerEl.classList.remove('header-hidden');
-  else headerEl.classList.add('header-hidden');
-}
-window.addEventListener('scroll', handleScroll, { passive: true });
 /* init */
 async function init() {
   priceSortMode = 'asc';
   await fetchManifest();
-  handleScroll();
   renderAccording();
 }
 init();
 </script>
   </body>
 </html>
-
