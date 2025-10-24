@@ -388,20 +388,6 @@ function makeCard(size, bc) {
   return card;
 }
 
-/* open details */
-// helper format/unformat nếu chưa có (giữ lại nếu đã tồn tại)
-function formatMoney(val) {
-  if (val === null || val === undefined || val === '') return '—';
-  const s = String(val).replace(/[^\d]/g, '');
-  if (!s) return '—';
-  return s.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'k';
-}
-function unformatMoney(s) {
-  return String(s || '')
-    .replace(/[^\d]/g, '')
-    .trim();
-}
-
 // mở modal chi tiết, với editPrice nằm ngay dưới Price:...
 async function openDetails(size, bc) {
   // header elements
@@ -624,5 +610,3 @@ init();
 </script>
   </body>
 </html>
-
-
