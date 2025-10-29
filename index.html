@@ -271,35 +271,21 @@ function buildManifestMap() {
 async function fetchManifest({ forceRefresh = false } = {}) {
   try {
     logStatus('Loading manifest...');
-    if (forceRefresh) {
-      const key = await promptAndValidateAdminKey();
-      if (!key) return;
-      const r = await fetch(WORKER_BASE + '/refresh-manifest', {
-        method: 'POST',
-        headers: { 'x-api-key': key },
-      });
-      if (!r.ok) {
-        const t = await r.text().catch(() => r.statusText);
-        throw new Error('Refresh failed: ' + t);
-      }
-      manifestRaw = await r.json();
-    } else {
-      const r = await fetch(WORKER_BASE + '/manifest.json', {
-        cache: 'no-store',
-      });
-      if (!r.ok) {
-        const t = await r.text().catch(() => r.statusText);
-        throw new Error('manifest fetch ' + r.status);
-      }
-      manifestRaw = await r.json();
+    const r = await fetch(WORKER_BASE + '/manifest.json', {
+      cache: 'no-store',
+    });
+    if (!r.ok) {
+      const t = await r.text().catch(() => r.statusText);
+      throw new Error('manifest fetch ' + r.status);
     }
+    manifestRaw = await r.json();
     manifest = normalizeManifest(manifestRaw || {});
     buildManifestMap();
     logStatus('Manifest loaded');
     buildTabs();
   } catch (err) {
     console.error(err);
-    logStatus('Không load được manifest: ' + err.message);
+    logStatus(err.message + 'Hệ thống shop đang bảo trì !');
     contentEl.innerHTML = '';
   }
 }
