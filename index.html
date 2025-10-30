@@ -158,6 +158,7 @@
 
     <script>
 	/* CONFIG */
+const R2_PUBLIC_BASE = "https://pub-9a763a2453ba41939860c4caded896a0.r2.dev";
 const WORKER_BASE = 'https://shoes-worker.lapproak0.workers.dev';
 const PREFIX = 'Shoes';
 
@@ -356,7 +357,7 @@ function makeCard(size, bc) {
     'thumb.jpeg';
   const encSize = encodeURIComponent(String(size).trim());
   const encCode = encodeURIComponent(String(bc.code).trim());
-  const src = `${WORKER_BASE}/${PREFIX}/${encSize}/${encCode}/${encodeURIComponent(
+  const src = `${R2_PUBLIC_BASE}/${PREFIX}/${encSize}/${encCode}/${encodeURIComponent(
     thumbName
   )}`;
 
@@ -393,7 +394,7 @@ async function openDetails(size, bc) {
   for (const fn of imgs) {
     const imWrap = document.createElement('div');
     const im = document.createElement('img');
-    im.src = `${WORKER_BASE}/${PREFIX}/${encodeURIComponent(
+    im.src = `${R2_PUBLIC_BASE}/${PREFIX}/${encodeURIComponent(
       String(size).trim()
     )}/${encodeURIComponent(String(bc.code).trim())}/${encodeURIComponent(fn)}`;
     im.style.width = '100%';
@@ -632,6 +633,5 @@ init();
 </script>
   </body>
 </html>
-
 
 
