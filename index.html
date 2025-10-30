@@ -363,8 +363,10 @@ function makeCard(size, bc) {
   const wrap = document.createElement('div');
   wrap.className = 'thumb-wrap';
   const img = document.createElement('img');
-  img.src = src;
+  img.dataset.src = src;
   img.alt = bc.code;
+  img.loading = 'lazy';
+  img.classList.add('lazy-img');
   img.onerror = () => {
     img.style.opacity = 0.6;
     img.style.objectFit = 'contain';
@@ -527,6 +529,7 @@ function renderSize(sizeStr) {
 function renderAccording() {
   if (activeTab === 'all') renderAll();
   else if (activeTab.startsWith('size:')) renderSize(activeTab.split(':')[1]);
+  if(window.initLazyImages) window.initLazyImages();
 }
 
 searchInput.addEventListener('keydown', e => {
@@ -594,6 +597,38 @@ async function init() {
   renderAccording();
 }
 init();
+		(function(){
+  const lazySelector = 'img.lazy-img';
+  let io;
+  function onIntersection(entries){
+    for(const e of entries){
+      if(e.isIntersecting){
+        const img = e.target;
+        const src = img.dataset && img.dataset.src;
+        if(src){
+          img.src = src;
+          img.removeAttribute('data-src');
+        }
+        img.classList.remove('lazy-img');
+        io.unobserve(img);
+      }
+    }
+  }
+  function initLazy(){
+    const imgs = Array.from(document.querySelectorAll(lazySelector));
+    if(imgs.length === 0) return;
+    if('IntersectionObserver' in window){
+      if(!io) io = new IntersectionObserver(onIntersection, { root: null, rootMargin: '300px', threshold: 0.01 });
+      imgs.forEach(i => {
+        if(!i.src) io.observe(i);
+      });
+    } else {
+      imgs.forEach(i => { if(i.dataset && i.dataset.src) i.src = i.dataset.src; i.classList.remove('lazy-img'); });
+    }
+  }
+  document.addEventListener('DOMContentLoaded', initLazy);
+  window.initLazyImages = initLazy;
+})();
 </script>
   </body>
 </html>
