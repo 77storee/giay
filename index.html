@@ -590,6 +590,7 @@ function doSearch(query) {
     contentEl.appendChild(grid);
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (window.initLazyImages) window.initLazyImages();
 }
 /* init */
 async function init() {
@@ -633,5 +634,6 @@ init();
 </script>
   </body>
 </html>
+
 
 
