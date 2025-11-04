@@ -159,7 +159,6 @@
     <script>
 	/* CONFIG */
 const R2_PUBLIC_BASE = "https://pub-9a763a2453ba41939860c4caded896a0.r2.dev";
-const WORKER_BASE = 'https://shoes-worker.lapproak0.workers.dev';
 const PREFIX = 'Shoes';
 
 /* DOM */
@@ -272,7 +271,7 @@ function buildManifestMap() {
 async function fetchManifest({ forceRefresh = false } = {}) {
   try {
     logStatus('Loading manifest...');
-    const r = await fetch(WORKER_BASE + '/manifest.json', {
+    const r = await fetch(R2_PUBLIC_BASE + '/manifest.json', {
       cache: 'no-store',
     });
     if (!r.ok) {
@@ -634,6 +633,7 @@ init();
 </script>
   </body>
 </html>
+
 
 
 
